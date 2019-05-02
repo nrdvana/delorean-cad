@@ -244,8 +244,10 @@ module dash_vent(
 				}
 			
 				// If not making a cutout, subtract the corner screw wells and holes
-				translate([ 0, -body_lower_dy/2, 0 ]) cylinder(r=2, h=50);
-				translate([ 0, -body_lower_dy/2, body_screw_z ]) cylinder(r=body_lower_dy/2-body_lower_wall_dy, h=20);
+				if (!cutout) {
+					translate([ 0, -body_lower_dy/2, 0 ]) cylinder(r=2, h=50);
+					translate([ 0, -body_lower_dy/2, body_screw_z ]) cylinder(r=body_lower_dy/2-body_lower_wall_dy, h=20);
+				}
 			}
 		}
 	}
