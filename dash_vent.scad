@@ -15,8 +15,8 @@ dash_vent_body_upper_dy= 15.8;     // thickness of portion outside of fiberglass
 dash_vent_body_end_rad= dash_vent_body_upper_dy / 2;
 dash_vent_body_lower_dy= 13.3;     // thickness of portion through fiberglass
 dash_vent_body_lower_dz= 12.2;     // height from base to fiberglass plane
-dash_vent_body_horiz_dz= 21.5-5.4; // thickness of horizontal plastic that screws go through
-dash_vent_body_fin_dz= 21.5-4.04;  // z-axis height of a fin
+dash_vent_body_screw_z= 19.3-5.75;  // thickness of horizontal plastic that screws go through
+dash_vent_body_fin_dz= 19.3-4.04;  // z-axis height of a fin
 dash_vent_body_lower_wall_dy= 1.2; // thickness of vent wall.  upper half is thicker
 dash_vent_flange_base_z= 12.4;     // z coordinate of bottom edge of flange
 dash_vent_flange_base_y= -5.29;    // y coordinate of flange overhang
@@ -26,8 +26,8 @@ dash_vent_flange_thick=2.4;        // thickness of flange
 dash_vent_flange_corner_rad= 25.11/2;
 dash_vent_fin_thick= 2.05;
 dash_vent_fin_slant_dz= 14.5;      // z-axis height of a fin
-dash_vent_fin5_slant_dx= 16.2;     // x-axis travel of a fin
-dash_vent_fin5_x_from_end= -27.5;   // x coordinate from end of body to near edge of final fin
+dash_vent_fin6_slant_dx= 16.2;     // x-axis travel of a fin
+dash_vent_fin6_x_from_end= -27.5;  // x coordinate from end of body to near edge of final fin
 
 module mirrored(vec) {
 	children();
@@ -50,7 +50,6 @@ module dash_vent_body_cross_section(
 	body_end_rad  = dash_vent_body_end_rad,
 	body_lower_dy = dash_vent_body_lower_dy,
 	body_lower_dz = dash_vent_body_lower_dz,
-	body_horiz_dz = dash_vent_body_horiz_dz,
 	body_fin_dz   = dash_vent_body_fin_dz,
 	body_lower_wall_dy= dash_vent_body_lower_wall_dy,
 	flange_base_z = dash_vent_flange_base_z,
@@ -108,7 +107,7 @@ module dash_vent(
 	body_end_rad  = dash_vent_body_end_rad,
 	body_lower_dy = dash_vent_body_lower_dy,
 	body_lower_dz = dash_vent_body_lower_dz,
-	body_horiz_dz = dash_vent_body_horiz_dz,
+	body_screw_z  = dash_vent_body_screw_z,
 	body_fin_dz   = dash_vent_body_fin_dz,
 	body_lower_wall_dy= dash_vent_body_lower_wall_dy,
 	flange_base_y = dash_vent_flange_base_y,
@@ -119,8 +118,8 @@ module dash_vent(
 	flange_corner_rad= dash_vent_flange_corner_rad,
 	fin_thick     = dash_vent_fin_thick,
 	fin_slant_dz  = dash_vent_fin_slant_dz,
-	fin5_slant_dx = dash_vent_fin5_slant_dx,
-	fin5_x_from_end= dash_vent_fin5_x_from_end,
+	fin6_slant_dx = dash_vent_fin6_slant_dx,
+	fin6_x_from_end= dash_vent_fin6_x_from_end,
 	o=0.01,
 	cutout=false
 ) {
@@ -131,7 +130,17 @@ module dash_vent(
 	curve_a= 180 - 2 * atan( curve_dx/2 / curve_dy );
 	curve_rad= curve_dy / (1-cos(curve_a));
 	
-	fin_dy= body_lower_dy - o*2;
+	fin_dy= body_lower_dy - body_lower_wall_dy*2;
+	fin1_a= atan(12.2 / curve_rad);
+	fin1_slant_dx= 5;
+	fin2_a= atan(27.5 / curve_rad);
+	fin2_slant_dx= 6.35;
+	fin3_a= atan(42.6 / curve_rad);
+	fin3_slant_dx= 8.14;
+	fin4_a= atan((42.6+15.4) / curve_rad);
+	fin4_slant_dx= 12.5;
+	fin5_a= atan((42.6+15.4+20.57) / curve_rad);
+	fin5_slant_dx= 16;
 
 	// Entire shape is mirrored across centerline
 	mirrored([1,0,0]) {
@@ -186,21 +195,57 @@ module dash_vent(
 						}
 					}
 					
-					// If not a cutout, add interior fins
+					// If not a cutout, add interior fins and screw platform
 					if (!cutout) {
+						translate([ -6, -body_lower_dy, body_lower_dz ])
+							cube([ 6+o, body_lower_dy, body_screw_z - body_lower_dz ]);
+						difference() {
+							union() {
+								// fin6 is special because the top doesn't get clipped flat like the rest
+								fin6_dh= sqrt(fin6_slant_dx*fin6_slant_dx + fin_slant_dz*fin_slant_dz) - fin_thick;
+								translate([ body_end_rad + fin6_x_from_end, -body_lower_wall_dy - fin_dy ])
+									rotate(-atan(fin_slant_dz / fin6_slant_dx), [0,1,0])
+										translate([ -2, -o, 0 ]) cube([ 2 + fin6_dh, fin_dy+o*2, fin_thick ]);
+								
+								translate([ 0, -curve_rad, 0 ]) rotate(curve_a-fin1_a, [0,0,1]) translate([ 0, curve_rad, 0 ]) {
+									rotate(-atan(fin_slant_dz / fin1_slant_dx), [0,1,0])
+										translate([ -2, -body_lower_wall_dy -fin_dy -o, 0 ]) cube([ 20, fin_dy+o*2, fin_thick ]);
+								}
+								translate([ 0, -curve_rad, 0 ]) rotate(curve_a-fin2_a, [0,0,1]) translate([ 0, curve_rad, 0 ]) {
+									rotate(-atan(fin_slant_dz / fin2_slant_dx), [0,1,0])
+										translate([ -2, -body_lower_wall_dy -fin_dy -o, 0 ]) cube([ 20, fin_dy+o*2, fin_thick ]);
+								}
+								translate([ 0, -curve_rad, 0 ]) rotate(curve_a-fin3_a, [0,0,1]) translate([ 0, curve_rad, 0 ]) {
+									rotate(-atan(fin_slant_dz / fin3_slant_dx), [0,1,0])
+										translate([ -2, -body_lower_wall_dy -fin_dy -o, 0 ]) cube([ 20, fin_dy+o*2, fin_thick ]);
+								}
+								translate([ 0, -curve_rad, 0 ]) rotate(curve_a-fin4_a, [0,0,1]) translate([ 0, curve_rad, 0 ]) {
+									rotate(-atan(fin_slant_dz / fin4_slant_dx), [0,1,0])
+										translate([ -2, -body_lower_wall_dy -fin_dy -o, 0 ]) cube([ 30, fin_dy+o*2, fin_thick ]);
+								}
+								translate([ 0, -curve_rad, 0 ]) rotate(curve_a-fin5_a, [0,0,1]) translate([ 0, curve_rad, 0 ]) {
+									rotate(-atan(fin_slant_dz / fin5_slant_dx), [0,1,0])
+										translate([ -2, -body_lower_wall_dy -fin_dy -o, 0 ]) cube([ 30, fin_dy+o*2, fin_thick ]);
+								}
+							}
+							// Clip the bottom and top of the fins
+							translate([ -dash_vent_curve_dx/2, -15, -10 ]) cube([ dash_vent_curve_dx/2, 20, 10 ]);
+							translate([ -dash_vent_curve_dx/2, -15, fin_slant_dz ]) cube([ dash_vent_curve_dx/2, 20, 10 ]);
+						}
 					}
 				}
 			}
 			// Subtract the angled edge of the lower vent
 			translate([ 0, -curve_rad, 0 ]) rotate(-curve_a, [0,0,1]) translate([ 0, curve_rad, 0 ]) {
-				translate([ body_end_rad + fin5_x_from_end + fin5_slant_dx*(body_lower_dz/fin_slant_dz), -body_lower_dy - 5, 0 ]) {
+				translate([ body_end_rad + fin6_x_from_end + fin6_slant_dx*(body_lower_dz/fin_slant_dz), -body_lower_dy - 5, 0 ]) {
 					cube([ 20, 20, body_lower_dz-o ]);
-					translate([ 0, 0, body_lower_dz ]) rotate( -atan(fin_slant_dz / fin5_slant_dx), [0,1,0])
+					translate([ 0, 0, body_lower_dz ]) rotate( -atan(fin_slant_dz / fin6_slant_dx), [0,1,0])
 						translate([ -50, 0, -50 ]) cube([ 50, 50, 50 ]);
 				}
 			
 				// If not making a cutout, subtract the corner screw wells and holes
-				
+				translate([ 0, -body_lower_dy/2, 0 ]) cylinder(r=2, h=50);
+				translate([ 0, -body_lower_dy/2, body_screw_z ]) cylinder(r=body_lower_dy/2-body_lower_wall_dy, h=20);
 			}
 		}
 	}
