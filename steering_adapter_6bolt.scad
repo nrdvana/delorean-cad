@@ -1,27 +1,3 @@
-module m_screw_cutout(len=10, pitch=.8, diam=5, $fn=20) {
-	height=.866*pitch;
-	poly=[ // x tracks "height" and y tracks "pitch"
-		[diam/2-height, 0 ],
-		for (t=[0:ceil(len/pitch)]) each([
-			[ diam/2             , pitch*t + 0 ],
-			[ diam/2             , pitch*t + pitch* 2/16 ],
-			[ diam/2 - height*5/8, pitch*t + pitch* 7/16 ],
-			[ diam/2 - height*5/8, pitch*t + pitch*11/16 ],
-		]),
-		[diam/2-height, pitch*ceil(len/pitch) + pitch*11/16 ]
-	];
-	intersection() {
-		union() {
-			cylinder(r=diam/2-height*3/4, h=len);
-			extrude(convexity=10) for(t=[0:ceil($fn/2)], union=false)
-				translate([0,0,(t/$fn-1)*pitch]) rotate(t*360/$fn, [0,0,1]) rotate(90, [1,0,0]) polygon(points=poly);
-			extrude(convexity=10) for(t=[ceil($fn/2):$fn], union=false)
-				translate([0,0,(t/$fn-1)*pitch]) rotate(t*360/$fn, [0,0,1]) rotate(90, [1,0,0]) polygon(points=poly);
-		}
-		cylinder(r=diam,h=len);
-	}
-}
-
 module steering_adapter_6bolt(
 	$fn=180,
 	o=0.01
